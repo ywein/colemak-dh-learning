@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Colemak-DH Trainer · Kyria</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main>
+    <nav class="tabs">
+      <a href="#" data-view="practice">Practice</a>
+      <a href="#stats" data-view="stats">Stats</a>
+    </nav>
+
+    <div id="practice-view" class="view">
+      <header class="topbar">
+        <div class="controls">
+          <div class="level">
+            <button id="level-prev" type="button" aria-label="Previous level">&larr;</button>
+            <span class="level-label">Level <b id="level-num">1</b> / <span id="level-max">1</span></span>
+            <button id="level-next" type="button" aria-label="Next level">&rarr;</button>
+            <span id="level-letters" class="letters"></span>
+          </div>
+          <label class="runs">Lines per session
+            <select id="runs">
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="20">20</option>
+            </select>
+          </label>
+        </div>
+        <div class="stats">
+          <div class="stat"><span class="v" id="stat-wpm">–</span><span class="l">wpm</span></div>
+          <div class="stat"><span class="v" id="stat-avg">–</span><span class="l">session wpm</span></div>
+          <div class="stat"><span class="v" id="stat-errors">0</span><span class="l">errors</span></div>
+          <div class="stat"><span class="v" id="stat-acc">–</span><span class="l">accuracy</span></div>
+          <div class="stat"><span class="v" id="stat-lines">0/10</span><span class="l">line</span></div>
+        </div>
+      </header>
+
+      <section class="typing">
+        <div id="run">
+          <div class="progress"><div id="progress-bar"></div></div>
+          <div id="line" class="line"></div>
+          <div id="next-line" class="line preview"></div>
+          <div id="paused" class="paused" hidden>Paused · press a key to continue</div>
+        </div>
+        <div id="summary" class="summary" hidden></div>
+      </section>
+
+      <section id="keyboard" class="keyboard" aria-hidden="true"></section>
+
+      <footer class="hint"><kbd>Esc</kbd> skip line</footer>
+    </div>
+
+    <div id="stats-view" class="view" hidden></div>
+  </main>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
