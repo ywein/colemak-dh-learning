@@ -139,6 +139,12 @@ The next line is shown faintly underneath as a preview. Finishing a line loads t
 - **Stats tab (`#stats`):** totals, a WPM-per-session chart (hover or arrow keys for details), an all-time miss heatmap with a top-10 list, a per-level table, recent sessions, and a two-click reset.
 - **New files:** `src/storage.js`, `src/training.js` (aggregation), `src/statsPage.js`, `src/chart.js`, `src/dom.js`.
 
+## 9. Per-level stats, key hint, weak-key focus (added)
+
+- **Per-level stats:** the Stats tab has a level picker (`All · 1 … 11`; levels without sessions are disabled). A level view scopes every section (tiles, WPM chart, heatmap with locked keys dimmed, recent sessions) to that level and offers "Reset level N stats". The "All" view is the sum of the per-level totals (`byLevel()` in `training.js`), and the "By level" table links into each level. History storage is unchanged: records already carry `level`.
+- **Key hint** (`Always on` / `Gradual (after 1s)` / `Off`, saved in settings): controls the next-key glow on the keyboard. Gradual hides it and shows it only after 1s without a keypress; any keypress hides it again.
+- **Weak-key focus (`src/focus.js`):** per-key miss rates come from the last 60 sessions, each weighted by recency (half-life 10 sessions), plus the lines finished in the current session. Each rate is smoothed toward the average with 20 pseudo-attempts. A key missed more than average gets `boost = (rate / average)^1.5`, capped at 5. The generator multiplies a word's weight by the product of its letters' boosts (capped at 6 per word), on top of frequency and the new-letter bonus. Pseudo-words and punctuation choice use the same boosts. The worst keys (boost ≥ 2) are shown as "focus" next to the level letters.
+
 ## Running
 
 ```

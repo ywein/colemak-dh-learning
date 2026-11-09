@@ -3,12 +3,15 @@ import { LEVELS, clampLevel, levelInfo } from './levels.js';
 import { generateLine, wordsIn } from './generator.js';
 import { Session } from './session.js';
 import { Training, aggregate, lineResult, topMissed } from './training.js';
+import { keyBoosts, focusKeys } from './focus.js';
 import { wpm, accuracy } from './stats.js';
-import { loadSettings, saveSettings, loadHistory, addSession, clearHistory } from './storage.js';
+import { loadSettings, saveSettings, loadHistory, addSession, clearHistory, clearLevel } from './storage.js';
 import { renderStatsPage } from './statsPage.js';
 import { h, tile, missedList, formatDuration, pct, int } from './dom.js';
 
 const RUN_OPTIONS = [5, 10, 20];
+const HINT_MODES = ['on', 'gradual', 'off']; // next-key highlight: always / after a pause / never
+const HINT_DELAY_MS = 1000; // "gradual": show the hint after this long without a keypress
 
 const $ = (id) => document.getElementById(id);
 const keyboard = createKeyboard($('keyboard'));
@@ -18,6 +21,8 @@ const state = {
   view: 'practice',
   level: clampLevel(settings.level),
   runs: RUN_OPTIONS.includes(settings.runs) ? settings.runs : 10,
+  hint: HINT_MODES.includes(settings.hint) ? settings.hint : 'on',
+  history: [], // completed sessions, reloaded when a training starts (drives weak-key focus)
   info: null,
   training: null,
   session: null, // the current line
@@ -27,7 +32,7 @@ const state = {
   summary: false, // showing the end-of-session summary
 };
 
-const persist = () => saveSettings({ level: state.level, runs: state.runs });
+const persist = () => saveSettings({ level: state.level, runs: state.runs, hint: state.hint });
 
 // ---------- level / session setup ----------
 
@@ -51,6 +56,7 @@ function renderLevel() {
 }
 
 function startTraining() {
+  state.history = loadHistory();
   state.training = new Training(state.info, state.runs);
   state.lastLine = null;
   state.nextText = '';
@@ -61,13 +67,44 @@ function startTraining() {
 // ---------- lines ----------
 
 function newLine() {
-  const text = state.nextText || generateLine(state.info);
+  const boosts = currentBoosts();
+  const text = state.nextText || generateLine(state.info, new Set(), boosts);
   state.session = new Session(text);
-  state.nextText = generateLine(state.info, wordsIn(text));
+  state.nextText = generateLine(state.info, wordsIn(text), boosts);
   renderLine();
   $('next-line').textContent = state.training.lines.length + 1 < state.training.target ? state.nextText : '';
-  keyboard.setNext(state.session.expected);
+  updateHint();
+  renderFocus(boosts);
   renderStats();
+}
+
+/** Weak keys from recent sessions plus the lines finished so far in this one. */
+function currentBoosts() {
+  const { lines } = state.training;
+  const records = lines.length ? [...state.history, aggregate(lines)] : state.history;
+  return keyBoosts(records, state.info.letters);
+}
+
+function renderFocus(boosts) {
+  const keys = focusKeys(boosts);
+  $('focus').hidden = !keys.length;
+  $('focus-keys').replaceChildren(...keys.map((c) => h('b', {}, c)));
+}
+
+// ---------- next-key hint ----------
+
+let hintTimer = null;
+
+/** Show, hide, or schedule the next-key highlight per the hint mode. Call after every keypress. */
+function updateHint() {
+  clearTimeout(hintTimer);
+  const next = state.summary ? null : state.session?.expected ?? null;
+  if (state.hint === 'on' || next == null) {
+    keyboard.setNext(next);
+    return;
+  }
+  keyboard.setNext(null);
+  if (state.hint === 'gradual') hintTimer = setTimeout(() => keyboard.setNext(next), HINT_DELAY_MS);
 }
 
 function renderLine() {
@@ -107,11 +144,8 @@ function showSummary(on) {
   state.summary = on;
   $('summary').hidden = !on;
   $('run').hidden = on;
-  if (on) {
-    keyboard.setNext(null);
-  } else {
-    keyboard.clearHeat();
-  }
+  if (on) updateHint(); // clears the highlight
+  else keyboard.clearHeat();
 }
 
 function renderSummary(record) {
@@ -177,8 +211,10 @@ function setView() {
   if (state.view === 'stats') {
     state.session?.pause();
     renderStatsPage($('stats-view'), loadHistory(), {
-      onReset: () => {
-        clearHistory();
+      onReset: (level) => {
+        if (level == null) clearHistory();
+        else clearLevel(level);
+        state.history = loadHistory();
         setView();
       },
     });
@@ -227,7 +263,7 @@ window.addEventListener('keydown', (e) => {
   if (sess.done) {
     finishLine();
   } else {
-    keyboard.setNext(sess.expected);
+    updateHint();
     renderStats();
   }
 });
@@ -260,6 +296,14 @@ $('runs').addEventListener('change', (e) => {
   persist();
   e.target.blur();
   startTraining();
+});
+
+$('hint').value = state.hint;
+$('hint').addEventListener('change', (e) => {
+  state.hint = e.target.value;
+  persist();
+  e.target.blur();
+  updateHint();
 });
 
 setLevel(state.level);

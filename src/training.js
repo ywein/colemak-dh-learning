@@ -46,6 +46,16 @@ export function aggregate(items) {
   return { ...sum, wpm: wpm(sum.chars, sum.ms), acc: accuracy(sum.correct, sum.keypresses) };
 }
 
+/** Session records grouped by level, lowest level first: Map(level -> records, oldest first). */
+export function byLevel(history) {
+  const groups = new Map();
+  for (const r of history) {
+    if (!groups.has(r.level)) groups.set(r.level, []);
+    groups.get(r.level).push(r);
+  }
+  return new Map([...groups].sort(([a], [b]) => a - b));
+}
+
 /** Keys sorted by how often they were missed. */
 export function topMissed(keys, n = 5) {
   return Object.entries(keys)

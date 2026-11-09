@@ -31,3 +31,7 @@ export function addSession(record) {
 export function clearHistory() {
   localStorage.removeItem(HISTORY_KEY);
 }
+
+export function clearLevel(level) {
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(loadHistory().filter((r) => r.level !== level)));
+}

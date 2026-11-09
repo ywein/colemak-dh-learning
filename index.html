@@ -21,12 +21,20 @@
             <span class="level-label">Level <b id="level-num">1</b> / <span id="level-max">1</span></span>
             <button id="level-next" type="button" aria-label="Next level">&rarr;</button>
             <span id="level-letters" class="letters"></span>
+            <span id="focus" class="focus" title="Keys you miss most often lately. New lines include them more." hidden>focus <span id="focus-keys"></span></span>
           </div>
-          <label class="runs">Lines per session
+          <label class="opt">Lines per session
             <select id="runs">
               <option value="5">5</option>
               <option value="10">10</option>
               <option value="20">20</option>
+            </select>
+          </label>
+          <label class="opt">Key hint
+            <select id="hint">
+              <option value="on">Always on</option>
+              <option value="gradual">Gradual (after 1s)</option>
+              <option value="off">Off</option>
             </select>
           </label>
         </div>
